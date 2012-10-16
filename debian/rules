@@ -17,13 +17,10 @@ prebuild-stamp: src/lxml/lxml.etree.pyx src/lxml/lxml.objectify.pyx
 build-arch: build
 build-indep: build
 build: build-stamp
-build-stamp: $(PYVERS:%=build-python%) $(PYVERS:%=dbg-build-python%)
+build-stamp: $(PYVERS:%=build-python%)
 	touch $@
 build-python%: prebuild
 	python$* setup.py build
-	touch $@
-dbg-build-python%: prebuild
-	python$*-dbg setup.py build
 	touch $@
 
 clean:
@@ -39,7 +36,7 @@ clean:
 	rm -f src/lxml/lxml-version.h
 	dh_clean 
 
-install: build install-prereq $(PYVERS:%=install-python%) $(PYVERS:%=dbg-install-python%) $(PY3VERS:%=install3-python%) $(PY3VERS:%=dbg-install3-python%)
+install: build install-prereq $(PYVERS:%=install-python%)
 	-find debian -name '*.py[co]' | xargs rm -f
 	-find debian -name __pycache__ | xargs rm -rf
 	rm -rf debian/python*-lxml/usr/lib/python
@@ -55,26 +52,12 @@ install-python%:
 	python$* setup.py install \
 		--root=$(CURDIR)/debian/python-lxml --install-layout=deb
 
-dbg-install-python%:
-	mkdir -p debian/python-lxml/usr/bin
-	mkdir -p debian/python-lxml-dbg/$(call py_libdir, $*)
-	python$*-dbg setup.py install \
-		--root=$(CURDIR)/debian/python-lxml-dbg --install-layout=deb
-	find debian/python-*-dbg ! -type d ! -name '*.so' | xargs rm -f
-	find debian/python-*-dbg -depth -empty -exec rmdir {} \;
-
 # Build architecture-independent files here.
 binary-indep: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs -i
 	dh_installdocs -i
-	mkdir -p debian/python-lxml-doc/usr/share/doc/python-lxml
-	cp -r doc/html debian/python-lxml-doc/usr/share/doc/python-lxml/
-	ln -sf ../python-lxml/html debian/python-lxml-doc/usr/share/doc/python-lxml-doc/html
-	dh_installexamples -i samples/*
-	dh_compress -i -X.xml -X.py \
-	    -X.html -X.css -X.asc -X.png -Xapi-objects.txt
 	dh_fixperms -i
 	dh_installdeb -i
 	dh_shlibdeps -i
@@ -90,15 +73,7 @@ binary-arch: build install
 	dh_installdocs -a CREDITS.txt README.rst TODO.txt
 	dh_installexamples -a samples/*
 	dh_python2 -a
-	dh_python3 -a
 	dh_strip -ppython-lxml --dbg-package=python-lxml-dbg
-	rm -rf debian/python-lxml-dbg/usr/share/doc/python-lxml-dbg
-	ln -s python-lxml debian/python-lxml-dbg/usr/share/doc/python-lxml-dbg
-	dh_strip -ppython3-lxml --dbg-package=python3-lxml-dbg
-	rm -rf debian/python3-lxml-dbg/usr/share/doc/python3-lxml-dbg
-	ln -s python3-lxml debian/python3-lxml-dbg/usr/share/doc/python3-lxml-dbg
-	dh_compress -a -X.xml -X.py \
-	    -X.html -X.css -X.asc -X.png -Xapi-objects.txt
 	dh_fixperms -a
 	dh_installdeb -a
 	dh_shlibdeps -a
